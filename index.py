@@ -25,7 +25,8 @@ url_theme2 = dbc.themes.VAPOR
 
 # ===== Reading n cleaning File ====== #
 df_main = pd.read_csv("data_gas.csv")
-df_main.info()
+df_main['DATA INICIAL'] = pd.to_datetime(df_main['DATA INICIAL'])
+df_main['DATA FINAL'] = pd.to_datetime(df_main['DATA FINAL'])
 
 
 
