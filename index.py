@@ -50,11 +50,11 @@ app.layout = dbc.Container(children=[
                 dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
-                            html.Legend("Análise do Preço dos Combustíveis")
-                        ],sm=8),
+                            html.Legend("Análise Combustiveis (R$)")
+                        ],sm=9),
                         dbc.Col([
                             html.I(className='fa fa-filter', style={'font-size':'200%'})                           
-                        ],sm=4,align='center')
+                        ],sm=3,align='center')
                     ]),
                     dbc.Row([
                         dbc.Col([
@@ -72,7 +72,59 @@ app.layout = dbc.Container(children=[
                     ],style={'margin-top':'10px'})
                 ])
             ],style=tab_card)
-        ])
+        ],sm=4,lg=2),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col([
+                            html.H3('Máximos e mínimos em R$'),
+                            dcc.Graph(id='static-maxmin', config={'displayModeBar':False, 'showTips':False})
+                        ])
+                    ])
+                ])
+            ],style=tab_card)
+        ],sm=8,lg=3),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col([
+                            html.H6('Ano:'),
+                            dcc.Dropdown(
+                                id='select-year',
+                                value=df_main.at[df_main.index[1],'ANO'],
+                                clearable=False,
+                                className='dbc',
+                                options=[
+                                    {'label':x, 'value':x} for x in df_main.ANO.unique()
+                                ]
+                            )
+                        ],sm=6),
+                        dbc.Col([
+                            html.H6('Região:'),
+                            dcc.Dropdown(
+                                id='select-regiao',
+                                value=df_main.at[df_main.index[1],'REGIÃO'],
+                                clearable=False,
+                                className='dbc',
+                                options=[
+                                    {'label':x, 'value':x} for x in df_main['REGIÃO'].unique()
+                                ]
+                            )
+                        ],sm=6)
+                    ]),
+                    dbc.Row([
+                        dbc.Col([
+                            dcc.Graph(id='regiaobar',config={'displayModeBar':False, 'showTips':False})
+                        ],sm=12,md=6),
+                        dbc.Col([
+                            dcc.Graph(id='estadobar',config={'displayModeBar':False, 'showTips':False})
+                        ],sm=12,md=6)
+                    ],style={'column-gap':'0px'})
+                ])
+            ],style=tab_card)
+        ],sm=12,lg=7),
     ])
 
 
