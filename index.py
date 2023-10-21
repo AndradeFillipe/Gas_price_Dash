@@ -125,9 +125,113 @@ app.layout = dbc.Container(children=[
                 ])
             ],style=tab_card)
         ],sm=12,lg=7),
-    ])
+        
+    ], class_name='g-2 my-auto'),
 
-
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3('Preço x Estado'),
+                    html.H6('Comparação Temporal entre estados'),
+                    dbc.Row([
+                        dbc.Row([
+                        dbc.Col([
+                                dcc.Dropdown(
+                                id="select_estados0",
+                                value=[df_main.at[df_main.index[3],'ESTADO'], df_main.at[df_main.index[13],'ESTADO'], df_main.at[df_main.index[6],'ESTADO']],
+                                clearable = False,
+                                multi=True,
+                                options=[
+                                    {"label": x, "value": x} for x in df_main.ESTADO.unique()
+                                ]),
+                        ], sm=10),
+                    ]),
+                    dcc.Graph(id='animation_graph', config={"displayModeBar": False, "showTips": False})
+                    ])
+                
+                ])
+            ],style=tab_card)
+        ],sm=12,md=6,lg=5),
+        dbc.Col([    
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3('Comparação Direta'),
+                    html.H6('Qual preço é menor em um dado período de tempo?'),
+                    dbc.Row([
+                        dbc.Col([                                   
+                            dcc.Dropdown(
+                                id="select_estado1",
+                                value=df_main.at[df_main.index[3],'ESTADO'],
+                                clearable = False,
+                                options=[
+                                    {"label": x, "value": x} for x in df_main.ESTADO.unique()
+                            ], style={'background-color': 'rgba(0, 0, 0, 0.3'}),
+                        ], sm=10, md=5),
+                        dbc.Col([
+                            dcc.Dropdown(
+                                id="select_estado2",
+                                value=df_main.at[df_main.index[1],'ESTADO'],
+                                clearable = False,
+                                options=[
+                                    {"label": x, "value": x} for x in df_main.ESTADO.unique()
+                            ], style={'background-color': 'rgba(0, 0, 0, 0.3'}),
+                        ], sm=10, md=6),
+                    ], style={'margin-top': '20px'}, justify='center'),
+                    dcc.Graph(id='direct_comparison_graph', config={"displayModeBar": False, "showTips": False}),
+                    html.P(id='desc_comparison', style={'color': 'gray', 'font-size': '80%'}),
+                ])
+            ], style=tab_card)
+        ], sm=12, md=6, lg=4),
+        dbc.Col([
+            dbc.Row([
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            dcc.Graph(id='card1_indicators', config={"displayModeBar": False, "showTips": False}, style={'margin-top': '30px'})
+                        ])
+                    ], style=tab_card)
+                ])
+            ], justify='center', style={'padding-bottom': '7px', 'height': '50%'}),
+            dbc.Row([
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            dcc.Graph(id='card2_indicators', config={"displayModeBar": False, "showTips": False}, style={'margin-top': '30px'})
+                        ])
+                    ], style=tab_card)
+                ])
+            ], justify='center', style={'height': '50%'})
+        ], sm=12, lg=3, style={'height': '100%'})
+    ],class_name='g-2 my-auto'),
+     dbc.Row([
+        dbc.Col([
+            dbc.Card([                
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Button([html.I(className='fa fa-play')], id="play-button", style={'margin-right': '15px'}),  
+                        dbc.Button([html.I(className='fa fa-stop')], id="stop-button")
+                    ], sm=12, md=1, style={'justify-content': 'center', 'margin-top': '10px'}),
+                    dbc.Col([
+                        dcc.RangeSlider(
+                            id='rangeslider',
+                            marks= {int(x): f'{x}' for x in df_main['ANO'].unique()},
+                            step=3,                
+                            min=2004,
+                            max=2021,
+                            value=[2004,2021],   
+                            dots=True,             
+                            pushable=3,
+                            tooltip={'always_visible':False, 'placement':'bottom'},
+                        )
+                    ], sm=12, md=10, style={'margin-top': '15px'}),
+                    # componente invisivel
+                    dcc.Interval(id='interval', interval=10000),
+                ], className='g-1', style={'height': '20%', 'justify-content': 'center'})
+                
+            ], style=tab_card)
+        ])
+    ], className='main_row g-2 my-auto')
 
 ], fluid=True, style={'height': '100%'})
 
