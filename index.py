@@ -23,6 +23,18 @@ url_theme1 = dbc.themes.FLATLY
 url_theme2 = dbc.themes.VAPOR
 tab_card = {'height':'100%'}
 
+main_config = {
+    "hovermode": "x unified",
+    "legend": {"yanchor":"top", 
+                "y":0.9, 
+                "xanchor":"left",
+                "x":0.1,
+                "title": {"text": None},
+                "font" :{"color":"white"},
+                "bgcolor": "rgba(0,0,0,0.5)"},
+    "margin": {"l":0, "r":0, "t":10, "b":0}
+}
+
 # ===== Reading n cleaning File ====== #
 df_main = pd.read_csv("data_gas.csv")
 df_main['DATA INICIAL'] = pd.to_datetime(df_main['DATA INICIAL'])
@@ -238,6 +250,23 @@ app.layout = dbc.Container(children=[
 
 # ======== Callbacks ========== #
 
+@app.callback(
+    Output('static-maxmin','figure'),
+    Input('dataset','data'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value')
+)
+def func(data,toggle):
+    template = template_theme1 if toggle else template_theme2
+    dff = pd.DataFrame(data)
+    max = dff.groupby(['ANO'])['VALOR REVENDA'].max()
+    min = dff.groupby(['ANO'])['VALOR REVENDA'].min()
+
+    final_df = pd.concat([max,min], axis=1)
+    final_df.columns = ['MAX','MIN']
+
+    fig = px.line(final_df,x=final_df.index, y=final_df.columns, template=template)
+    fig.update_layout(main_config, height=150, xaxis_title=None,yaxis_title=None)
+    return fig
 
 # Run server
 if __name__ == '__main__':
