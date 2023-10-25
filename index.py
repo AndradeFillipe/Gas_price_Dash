@@ -268,6 +268,89 @@ def func(data,toggle):
     fig.update_layout(main_config, height=150, xaxis_title=None,yaxis_title=None)
     return fig
 
+@app.callback(
+    Output("card2_indicators", "figure"),
+    [Input('dataset', 'data'), 
+    Input('select_estado2', 'value'),
+    Input(ThemeSwitchAIO.ids.switch("theme"), "value")]
+)
+def card2(data, estado, toggle):
+    template = template_theme1 if toggle else template_theme2
+
+    dff = pd.DataFrame(data)
+    df_final = dff[dff.ESTADO.isin([estado])]
+
+    data1 = str(int(dff.ANO.min()) - 1)
+    data2 = dff.ANO.max()
+    
+    fig = go.Figure()
+
+    fig.add_trace(go.Indicator(
+        mode = "number+delta",
+        title = {"text": f"<span style='size:60%'>{estado}</span><br><span style='font-size:0.7em'>{data1} - {data2}</span>"},
+        value = df_final.at[df_final.index[-1],'VALOR REVENDA'],
+        number = {'prefix': "R$", 'valueformat': '.2f'},
+        delta = {'relative': True, 'valueformat': '.1%', 'reference': df_final.at[df_final.index[0],'VALOR REVENDA']}
+    ))
+    
+    fig.update_layout(main_config, height=250, template=template)
+    
+    return fig
+
+@app.callback(
+    [Output('regiaobar', 'figure'),
+    Output('estadobar', 'figure')],
+    [Input('dataset_fixed', 'data'),
+    Input('select-year', 'value'),
+    Input('select-regiao', 'value'),
+    Input(ThemeSwitchAIO.ids.switch("theme"), "value")]
+)
+def graph1(data, ano, regiao, toggle):
+    template = template_theme1 if toggle else template_theme2
+
+    df = pd.DataFrame(data)
+    df_filtered = df[df.ANO.isin([ano])]
+
+    dff_regiao = df_filtered.groupby(['ANO', 'REGIÃO'])['VALOR REVENDA'].mean().reset_index()
+    dff_estado = df_filtered.groupby(['ANO', 'ESTADO', 'REGIÃO'])['VALOR REVENDA'].mean().reset_index()
+    dff_estado = dff_estado[dff_estado.REGIÃO.isin([regiao])]
+
+    dff_regiao = dff_regiao.sort_values(by='VALOR REVENDA',ascending=True)
+    dff_estado = dff_estado.sort_values(by='VALOR REVENDA',ascending=True)
+
+    dff_regiao['VALOR REVENDA'] = dff_regiao['VALOR REVENDA'].round(decimals = 2)
+    dff_estado['VALOR REVENDA'] = dff_estado['VALOR REVENDA'].round(decimals = 2)
+
+    fig1_text = [f'{x} - R${y}' for x,y in zip(dff_regiao.REGIÃO.unique(), dff_regiao['VALOR REVENDA'].unique())]
+    fig2_text = [f'R${y} - {x}' for x,y in zip(dff_estado.ESTADO.unique(), dff_estado['VALOR REVENDA'].unique())]
+
+    fig1 = go.Figure(go.Bar(
+        x=dff_regiao['VALOR REVENDA'],
+        y=dff_regiao['REGIÃO'],
+        orientation='h',
+        text=fig1_text,
+        textposition='auto',
+        insidetextanchor='end',
+        insidetextfont=dict(family='Times', size=12)
+    ))
+    fig2 = go.Figure(go.Bar(
+        x=dff_estado['VALOR REVENDA'],
+        y=dff_estado['ESTADO'],
+        orientation='h',
+        text=fig2_text,
+        insidetextanchor='end',
+        insidetextfont=dict(family='Times', size=12) 
+    ))
+
+    #fig1.update_xaxes(autorange='reversed') - explicar por que isso não funciona
+    fig1.update_layout(main_config, yaxis={'showticklabels':False}, height=140, template=template)
+    fig2.update_layout(main_config, yaxis={'showticklabels':False}, height=140, template=template)
+
+    # range
+    fig1.update_layout(xaxis_range=[dff_regiao['VALOR REVENDA'].max(), dff_regiao['VALOR REVENDA'].min() - 0.15])
+    fig2.update_layout(xaxis_range=[dff_estado['VALOR REVENDA'].min() - 0.15, dff_estado['VALOR REVENDA'].max()])
+
+    return [fig1, fig2]
 # Run server
 if __name__ == '__main__':
     app.run_server(debug=True)
