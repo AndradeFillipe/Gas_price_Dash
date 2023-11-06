@@ -351,6 +351,110 @@ def graph1(data, ano, regiao, toggle):
     fig2.update_layout(xaxis_range=[dff_estado['VALOR REVENDA'].min() - 0.15, dff_estado['VALOR REVENDA'].max()])
 
     return [fig1, fig2]
+
+@app.callback(
+    Output('animation_graph', 'figure'),
+    Input('dataset','data'),
+    Input('select_estados0', 'value'),
+    Input(ThemeSwitchAIO.ids.switch("theme"), "value")
+)
+def animation(data,estados,toggle):
+    template = template_theme1 if toggle else template_theme2
+    dff = pd.DataFrame(data)
+    mask = dff.ESTADO.isin(estados)
+    fig = px.line(dff[mask], x='DATA', y='VALOR REVENDA',
+                  color='ESTADO', template=template)
+    fig.update_layout(main_config, height=425,xaxis_title=None)
+    return fig
+
+@app.callback(
+    [Output('direct_comparison_graph', 'figure'),
+    Output('desc_comparison', 'children')],
+    [Input('dataset', 'data'),
+    Input('select_estado1', 'value'),
+    Input('select_estado2', 'value'),
+    Input(ThemeSwitchAIO.ids.switch("theme"), "value")]
+)
+def func(data, est1, est2, toggle):
+    template = template_theme1 if toggle else template_theme2
+
+    dff = pd.DataFrame(data)
+    df1 = dff[dff.ESTADO.isin([est1])]
+    df2 = dff[dff.ESTADO.isin([est2])]
+    df_final = pd.DataFrame()
+    
+    df_estado1 = df1.groupby(pd.PeriodIndex(df1['DATA'], freq="M"))['VALOR REVENDA'].mean().reset_index()
+    df_estado2 = df2.groupby(pd.PeriodIndex(df2['DATA'], freq="M"))['VALOR REVENDA'].mean().reset_index()
+
+    df_estado1['DATA'] = pd.PeriodIndex(df_estado1['DATA'], freq="M")
+    df_estado2['DATA'] = pd.PeriodIndex(df_estado2['DATA'], freq="M")
+
+    df_final['DATA'] = df_estado1['DATA'].astype('datetime64[ns]')
+    df_final['VALOR REVENDA'] = df_estado1['VALOR REVENDA']-df_estado2['VALOR REVENDA']
+    
+    fig = go.Figure()
+    # Toda linha
+    fig.add_scattergl(name=est1, x=df_final['DATA'], y=df_final['VALOR REVENDA'])
+    # Abaixo de zero
+    fig.add_scattergl(name=est2, x=df_final['DATA'], y=df_final['VALOR REVENDA'].where(df_final['VALOR REVENDA'] > 0.00000))
+
+    # Updates
+    fig.update_layout(main_config, height=350, template=template)
+    fig.update_yaxes(range = [-0.7,0.7])
+
+    # Annotations pra mostrar quem é o mais barato
+    fig.add_annotation(text=f'{est2} mais barato',
+        xref="paper", yref="paper",
+        font=dict(
+            family="Courier New, monospace",
+            size=12,
+            color="#ffffff"
+            ),
+        align="center", bgcolor="rgba(0,0,0,0.5)", opacity=0.8,
+        x=0.1, y=0.75, showarrow=False)
+
+    fig.add_annotation(text=f'{est1} mais barato',
+        xref="paper", yref="paper",
+        font=dict(
+            family="Courier New, monospace",
+            size=12,
+            color="#ffffff"
+            ),
+        align="center", bgcolor="rgba(0,0,0,0.5)", opacity=0.8,
+        x=0.1, y=0.25, showarrow=False) 
+
+    # Definindo o texto
+    text = f"Comparando {est1} e {est2}. Se a linha estiver acima do eixo X, {est2} tinha menor preço, do contrário, {est1} tinha um valor inferior"
+    return [fig, text]
+
+@app.callback(
+    Output("card1_indicators", "figure"),
+    [Input('dataset', 'data'), 
+    Input('select_estado1', 'value'),
+    Input(ThemeSwitchAIO.ids.switch("theme"), "value")]
+)
+def card1(data, estado, toggle):
+    template = template_theme1 if toggle else template_theme2
+
+    dff = pd.DataFrame(data)
+    df_final = dff[dff.ESTADO.isin([estado])]
+
+    data1 = str(int(dff.ANO.min()) - 1)
+    data2 = dff.ANO.max()   
+    
+    fig = go.Figure()
+
+    fig.add_trace(go.Indicator(
+        mode = "number+delta",
+        title = {"text": f"<span style='size:60%'>{estado}</span><br><span style='font-size:0.7em'>{data1} - {data2}</span>"},
+        value = df_final.at[df_final.index[-1],'VALOR REVENDA'],
+        number = {'prefix': "R$", 'valueformat': '.2f'},
+        delta = {'relative': True, 'valueformat': '.1%', 'reference': df_final.at[df_final.index[0],'VALOR REVENDA']}
+    ))
+    
+    fig.update_layout(main_config, height=250, template=template)
+    
+    return fig
 # Run server
 if __name__ == '__main__':
     app.run_server(debug=True)
